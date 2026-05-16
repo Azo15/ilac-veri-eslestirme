@@ -1,0 +1,78 @@
+{
+    "TITCK": {
+        "shape": [
+            15573,
+            4
+        ],
+        "columns": [
+            "ID",
+            "Ilac_Adi",
+            "Etkin_Madde",
+            "Firma"
+        ],
+        "head": [
+            {
+                "ID": 0,
+                "Ilac_Adi": "% 0.4 LİDODEKS % 5 DEKSTROZ İÇİNDE İ.V. İNFÜZYON İÇİN ÇÖZELTİ",
+                "Etkin_Madde": "LİDOKAİN HİDROKLORÜR",
+                "Firma": "POLİFARMA İLAÇ SAN. VE TİC. A.Ş."
+            },
+            {
+                "ID": 1,
+                "Ilac_Adi": "% 0.8 LİDODEKS % 5 DEKSTROZ İÇİNDE İ.V. İNFÜZYON İÇİN ÇÖZELTİ",
+                "Etkin_Madde": "LİDOKAİN HİDROKLORÜR",
+                "Firma": "POLİFARMA İLAÇ SAN. VE TİCARET A.Ş."
+            },
+            {
+                "ID": 2,
+                "Ilac_Adi": "% 10 DEKSTROZ BIOSEL SUDAKI HIPERTONIK SOLÜSYONU",
+                "Etkin_Madde": "DEKSTROZ",
+                "Firma": "OSEL ILAÇ SAN. VE TIC.A.Ş."
+            }
+        ]
+    },
+    "ATC": {
+        "shape": [
+            17907,
+            7
+        ],
+        "columns": [
+            "İlaç Adı",
+            "Barkod",
+            "ATC Kodu",
+            "ATC Adı",
+            "Firma Adı",
+            "Reçete Türü",
+            "Durumu"
+        ],
+        "head": [
+            {
+                "İlaç Adı": "HELICOBACTER TEST INFAI (C-URE) 75 MG 1 SISE",
+                "Barkod": 8699801967449,
+                "ATC Kodu": "V04CX05",
+                "ATC Adı": "13C-urea",
+                "Firma Adı": "INFAI GMBH",
+                "Reçete Türü": "Normal",
+                "Durumu": "Pasif"
+            },
+            {
+                "İlaç Adı": "ZIAGEN 300 MG 60 FILM TABLET",
+                "Barkod": 8699522096107,
+                "ATC Kodu": "J05AF06",
+                "ATC Adı": "abacavir",
+                "Firma Adı": "GLAXOSMİTHKLİNE İLAÇLARI SAN. VE TİC. A.Ş.",
+                "Reçete Türü": "Normal",
+                "Durumu": "Aktif"
+            },
+            {
+                "İlaç Adı": "ORENCIA 250 MG KON.PERFUZYONLUK COZ.ICIN TOZ ICEREN FLAKON",
+                "Barkod": 8699726266405,
+                "ATC Kodu": "L04AA24",
+                "ATC Adı": "abatacept",
+                "Firma Adı": "BRISTOL-MYERS SQUIBB İLAÇLARI INC. İSTANBUL ŞUBESİ",
+                "Reçete Türü": "Normal",
+                "Durumu": "Aktif"
+            }
+        ]
+    }
+}
