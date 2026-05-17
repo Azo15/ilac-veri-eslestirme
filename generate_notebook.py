@@ -5,7 +5,7 @@ nb = nbf.v4.new_notebook()
 text_1 = """# Veri Madenciliği Projesi: İlaç Veri Setleri Eşleştirme (Record Linkage)
 **Proje Amacı:** TİTCK ve ATC ilaç listelerindeki ilaçları metin madenciliği ve Bulanık Eşleştirme (Fuzzy Matching) yöntemleriyle eşleştirmek.
 
-Bu projede HIZ ve DOĞRULUK sağlamak için **TF-IDF Vektörizasyonu** ve **Kosinüs Benzerliği (Cosine Similarity)** algoritması kullanılmıştır."""
+Ödev kriterlerine uygun olarak, eşleştirme işleminde sadece 'İlaç Adı' değil, 'Etkin Madde' (ATC Adı) ve 'Firma' bilgileri de normalize edilip birleştirilerek tam eşleştirme sağlanmıştır."""
 
 code_1 = """import pandas as pd
 import numpy as np
@@ -18,23 +18,21 @@ warnings.filterwarnings('ignore')"""
 text_2 = """## 1. Verilerin Yüklenmesi
 TİTCK ve ATC verilerini okuyoruz."""
 
-code_2 = """# TİTCK verisini virgül ayracıyla okuyoruz (ParserError'u önlemek için sep=',')
-df_titck = pd.read_csv('titck_liste_18.04.csv', sep=',')
+code_2 = """df_titck = pd.read_csv('titck_liste_18.04.csv', sep=',')
 print(f"TİTCK Satır Sayısı: {len(df_titck)}")
-display(df_titck.head(3))
+display(df_titck.head(2))
 
-# ATC Excel dosyasını okuyoruz
 df_atc = pd.read_excel('ATC_14_04.xlsx')
 print(f"ATC Satır Sayısı: {len(df_atc)}")
-display(df_atc.head(3))"""
+display(df_atc.head(2))"""
 
 text_3 = """## 2. Veri Temizleme ve Normalleştirme (Pre-processing)
-İki listedeki isimleri standart bir hale getirmek için Türkçe karakterleri dönüştüren, noktalama işaretlerini silen ve metni küçülten bir temizleme fonksiyonu tanımlıyoruz."""
+Ödev kriterlerine göre 'İlaç Adı', 'Etkin Madde' ve 'Firma' isimlerindeki dil ve yazım farklılıklarını gidermek için özel bir normalizasyon fonksiyonu tanımlıyoruz.
+Özellikle Etkin Madde kısmındaki Türkçe/İngilizce farklılıklarını (örn: parasetamol vs paracetamol) tolere edebilmek için tüm metinleri standardize edip tek bir metin havuzunda (Combined_Text) birleştiriyoruz."""
 
 code_3 = """def clean_text(text):
     if pd.isna(text):
         return ""
-    
     text = str(text).lower()
     
     # Türkçe karakter dönüşümü
@@ -44,65 +42,62 @@ code_3 = """def clean_text(text):
         
     # Sadece harf ve rakamları bırak, noktalama işaretlerini sil
     text = re.sub(r'[^a-z0-9\s]', ' ', text)
-    
-    # Birden fazla boşluğu tek boşluğa düşür ve kenar boşluklarını temizle
     text = re.sub(r'\s+', ' ', text).strip()
     return text
 
-# Temizlenmiş sütunları oluşturuyoruz
+# TİTCK Sütunlarını Temizleme ve Birleştirme
 df_titck['Ilac_Adi_Clean'] = df_titck['Ilac_Adi'].apply(clean_text)
+df_titck['Etkin_Madde_Clean'] = df_titck['Etkin_Madde'].apply(clean_text)
+df_titck['Firma_Clean'] = df_titck['Firma'].apply(clean_text)
+
+# Tüm kritik bilgileri tek bir metinde birleştiriyoruz
+df_titck['Combined_Text'] = df_titck['Ilac_Adi_Clean'] + " " + df_titck['Etkin_Madde_Clean'] + " " + df_titck['Firma_Clean']
+
+# ATC Sütunlarını Temizleme ve Birleştirme (ATC Adı = Etkin Madde)
 df_atc['Ilac_Adi_Clean'] = df_atc['İlaç Adı'].apply(clean_text)
+df_atc['ATC_Adi_Clean'] = df_atc['ATC Adı'].apply(clean_text)
+df_atc['Firma_Adi_Clean'] = df_atc['Firma Adı'].apply(clean_text)
 
-print("Temizleme işlemi tamamlandı.")"""
+df_atc['Combined_Text'] = df_atc['Ilac_Adi_Clean'] + " " + df_atc['ATC_Adi_Clean'] + " " + df_atc['Firma_Adi_Clean']
 
-text_4 = """## 3. TF-IDF ve Cosine Similarity ile Eşleştirme (Fuzzy Matching)
-ATC listesindeki ilaç isimleri üzerinden bir "Kelime Uzayı" (TF-IDF Matrisi) oluşturup, TİTCK listesindeki her bir ilaç için bu uzaydaki en benzer ATC ilacını Kosinüs Benzerliği ile bulacağız."""
+print("Veri temizleme, etkin madde normalizasyonu ve birleştirme tamamlandı.")"""
 
-code_4 = """# N-gram tabanlı (harf grupları) TF-IDF Vektörizatörü
-# analyzer='char_wb', ngram_range=(2, 4) kelime bazlı değil, hece/harf grubu bazlı eşleşme sağlar (yazım hatalarına çok dayanıklıdır).
+text_4 = """## 3. TF-IDF ve Cosine Similarity ile Bulanık Eşleştirme (Fuzzy Matching)
+Levenshtein yerine 15.000 x 17.000 satırda çok daha hızlı ve başarılı olan TF-IDF harf grupları (n-gram) + Kosinüs Benzerliği kullanıyoruz. 
+Bu yöntem paracetamol/parasetamol gibi farklılıkları harf gruplarındaki yüksek örtüşme sayesinde yakalar."""
+
+code_4 = """# n-gram_range=(2, 4) ile kelimeleri 2, 3 ve 4 harfli parçalara bölüyoruz. (Örn: 'para', 'aras', 'rase' vb.)
 vectorizer = TfidfVectorizer(analyzer='char_wb', ngram_range=(2, 4))
 
-# ATC listesi bizim referans (arama yapacağımız) uzayımız
-atc_clean_names = df_atc['Ilac_Adi_Clean'].tolist()
-tfidf_matrix_atc = vectorizer.fit_transform(atc_clean_names)
+atc_combined_texts = df_atc['Combined_Text'].tolist()
+tfidf_matrix_atc = vectorizer.fit_transform(atc_combined_texts)
 
-# TİTCK listesindeki isimleri aynı uzaya dönüştürüyoruz
-titck_clean_names = df_titck['Ilac_Adi_Clean'].tolist()
-tfidf_matrix_titck = vectorizer.transform(titck_clean_names)
+titck_combined_texts = df_titck['Combined_Text'].tolist()
+tfidf_matrix_titck = vectorizer.transform(titck_combined_texts)
 
-print("TF-IDF matrisleri oluşturuldu. Benzerlik hesaplaması başlatılıyor...")
+print("Matrisler oluşturuldu. Eşleştirmeler hesaplanıyor...")
 
-# Belleği yormamak için batch'ler halinde Kosinüs Benzerliği hesaplıyoruz
 batch_size = 1000
 best_matches = []
 
 for i in range(0, tfidf_matrix_titck.shape[0], batch_size):
     end_idx = min(i + batch_size, tfidf_matrix_titck.shape[0])
-    
-    # Batch içindeki TİTCK isimlerinin, tüm ATC matrisi ile benzerliği
     cosine_sim_batch = cosine_similarity(tfidf_matrix_titck[i:end_idx], tfidf_matrix_atc)
     
-    # Her satır için en yüksek benzerlik skorunu ve indeksini alıyoruz
     best_scores = np.max(cosine_sim_batch, axis=1)
     best_indices = np.argmax(cosine_sim_batch, axis=1)
     
     for score, idx in zip(best_scores, best_indices):
-        best_matches.append({
-            'best_match_idx': idx,
-            'match_score': score
-        })
+        best_matches.append({'best_match_idx': idx, 'match_score': score})
         
-print("Eşleştirme hesaplaması tamamlandı!")"""
+print("Hesaplama tamamlandı!")"""
 
-text_5 = """## 4. Sonuç Tablosunun Oluşturulması ve Dışa Aktarma
-Belirlediğimiz eşleşme oranının (Örn: %80) üzerindeki kayıtları kabul edeceğiz.
-Ödevin istediği kolonlar: `TITCK_ID`, `TITCK_Ilac_Adi`, `ATC_Barkod`, `ATC_Kodu`, `ATC_Durumu`, `Match Score`"""
+text_5 = """## 4. Sonuç Tablosu (Ödev Teslim Formatı)
+Ödevde istenen `TITCK_ID`, `TITCK_Ilac_Adi`, `ATC_Barkod`, `ATC_Kodu`, `ATC_Durumu`, `Match Score` kolonlarından oluşan nihai tabloyu hazırlıyoruz."""
 
-code_5 = """# MATCH SCORE THRESHOLD (Benzerlik Sınırı)
-THRESHOLD = 0.80
+code_5 = """THRESHOLD = 0.70 # İlaç adı, firma ve etkin madde 3'lü birleştiği için threshold'u %70'e esnetiyoruz.
 
 results = []
-
 for idx_titck, match_info in enumerate(best_matches):
     score = match_info['match_score']
     idx_atc = match_info['best_match_idx']
@@ -117,20 +112,15 @@ for idx_titck, match_info in enumerate(best_matches):
             'ATC_Barkod': row_atc['Barkod'],
             'ATC_Kodu': row_atc['ATC Kodu'],
             'ATC_Durumu': row_atc['Durumu'],
-            'Match Score': round(score * 100, 2)  # Yüzdelik cinsten
+            'Match Score': round(score * 100, 2)
         })
 
 df_results = pd.DataFrame(results)
+print(f"Başarıyla Eşleştirilen Kayıt Sayısı: {len(df_results)}")
 
-print(f"Toplam TİTCK Kaydı: {len(df_titck)}")
-print(f"Başarıyla Eşleştirilen Kayıt Sayısı (Score >= {THRESHOLD*100}%): {len(df_results)}")
-
-# Sonuçları göster
-display(df_results.head(10))
-
-# Nihai CSV dosyasına kaydet
 df_results.to_csv('eslesmis_veriler.csv', index=False, encoding='utf-8-sig')
-print("\\n'eslesmis_veriler.csv' dosyası başarıyla kaydedildi.")"""
+print("\\n'eslesmis_veriler.csv' başarıyla kaydedildi.")
+display(df_results.head(10))"""
 
 nb['cells'] = [
     nbf.v4.new_markdown_cell(text_1),
