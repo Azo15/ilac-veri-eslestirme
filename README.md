@@ -47,3 +47,4 @@ Ardından terminal üzerinden klasöre gidip Jupyter Notebook'u başlatabilirsin
 jupyter notebook record_linkage_project.ipynb
 ```
 Azo İsmail - GitHub Contribution
+
